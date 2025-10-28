@@ -3,7 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
-import { join } from 'path';
+import { resolve } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -41,7 +41,7 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: 'odds',
-      protoPath: join(__dirname, '../../../proto/odds.proto'),
+      protoPath: resolve(process.cwd(), 'proto/odds.proto'),
       url: `0.0.0.0:${grpcPort}`,
     },
   });

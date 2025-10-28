@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { type ClientGrpc, Client, Transport } from '@nestjs/microservices';
-import { join } from 'path';
+import { resolve } from 'path';
 import { firstValueFrom } from 'rxjs';
 
 interface OddsService {
@@ -19,7 +19,7 @@ export class OddsClientService implements OnModuleInit {
     transport: Transport.GRPC,
     options: {
       package: 'odds',
-      protoPath: join(__dirname, '../../../proto/odds.proto'),
+      protoPath: resolve(process.cwd(), 'proto/odds.proto'),
       url: process.env.BETTING_GRPC_URL || 'localhost:5001',
     },
   })
