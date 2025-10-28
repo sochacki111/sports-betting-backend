@@ -18,13 +18,16 @@ npm install
 cp .env.example .env
 # Edit .env and add your THE_ODDS_API_KEY
 
-# Create databases (if not using Docker)
-createdb odds_db
-createdb betting_db
+# Create databases
+# ⚠️ See SETUP_DATABASE.md for detailed instructions
+# Quick options:
 
-# Or use Docker
-docker run --name odds-postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
-docker run --name betting-postgres -e POSTGRES_PASSWORD=postgres -p 5433:5432 -d postgres
+# Option A: If you have PostgreSQL installed locally
+# Follow SETUP_DATABASE.md Option 1 (create user + databases)
+
+# Option B: Using Docker (if PostgreSQL not installed)
+docker run --name odds-postgres -e POSTGRES_DB=odds_db -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
+docker run --name betting-postgres -e POSTGRES_DB=betting_db -e POSTGRES_PASSWORD=postgres -p 5433:5432 -d postgres
 
 # Run migrations
 npm run prisma:migrate:odds
