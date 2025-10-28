@@ -1,0 +1,67 @@
+// This is your Prisma schema file for Betting Service
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma/betting-client"
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("BETTING_DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  balance   Float    @default(1000)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  bets      Bet[]
+
+  @@map("users")
+}
+
+model Bet {
+  id          String     @id @default(uuid())
+  userId      String     @map("user_id")
+  gameId      String     @map("game_id")
+  betType     BetType    @map("bet_type")
+  selection   String     // home, away, draw
+  amount      Float
+  odds        Float
+  potentialWin Float     @map("potential_win")
+  status      BetStatus  @default(PENDING)
+  result      BetResult? @default(PENDING)
+  settledAt   DateTime?  @map("settled_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bets")
+  @@index([userId])
+  @@index([gameId])
+  @@index([status])
+  @@unique([userId, gameId, selection])
+}
+
+enum BetType {
+  MONEYLINE
+  SPREAD
+  OVER_UNDER
+}
+
+enum BetStatus {
+  PENDING
+  SETTLED
+  CANCELLED
+}
+
+enum BetResult {
+  PENDING
+  WON
+  LOST
+  PUSH
+}

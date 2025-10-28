@@ -1,0 +1,57 @@
+// This is your Prisma schema file for Odds Service
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma/odds-client"
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("ODDS_DATABASE_URL")
+}
+
+model Game {
+  id          String   @id @default(uuid())
+  sportKey    String   @map("sport_key")
+  homeTeam    String   @map("home_team")
+  awayTeam    String   @map("away_team")
+  startTime   DateTime @map("start_time")
+  status      GameStatus @default(UPCOMING)
+  homeScore   Int?     @map("home_score")
+  awayScore   Int?     @map("away_score")
+  externalId  String?  @unique @map("external_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  odds        Odds[]
+
+  @@map("games")
+  @@index([status])
+  @@index([startTime])
+}
+
+model Odds {
+  id          String   @id @default(uuid())
+  gameId      String   @map("game_id")
+  bookmaker   String
+  market      String
+  homeOdds    Float?   @map("home_odds")
+  awayOdds    Float?   @map("away_odds")
+  drawOdds    Float?   @map("draw_odds")
+  lastUpdate  DateTime @default(now()) @map("last_update")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@map("odds")
+  @@index([gameId])
+  @@index([bookmaker])
+}
+
+enum GameStatus {
+  UPCOMING
+  LIVE
+  FINISHED
+  CANCELLED
+}

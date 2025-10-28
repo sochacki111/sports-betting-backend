@@ -1,0 +1,340 @@
+{
+  "info": {
+    "name": "Sports Betting Backend API",
+    "description": "Complete API collection for Sports Betting Backend with Odds and Betting services",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Odds Service",
+      "item": [
+        {
+          "name": "Refresh Odds",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/odds/refresh",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["odds", "refresh"]
+            },
+            "description": "Fetch and update odds from The Odds API"
+          }
+        },
+        {
+          "name": "Get All Games",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/games",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["games"]
+            },
+            "description": "Get all games with odds"
+          }
+        },
+        {
+          "name": "Get Upcoming Games",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/games?status=UPCOMING",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["games"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "UPCOMING"
+                }
+              ]
+            },
+            "description": "Get only upcoming games"
+          }
+        },
+        {
+          "name": "Get Game by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3001/games/{{gameId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["games", "{{gameId}}"]
+            },
+            "description": "Get specific game details with odds"
+          }
+        },
+        {
+          "name": "Generate Game Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeScore\": 3,\n  \"awayScore\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3001/games/{{gameId}}/result",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["games", "{{gameId}}", "result"]
+            },
+            "description": "Generate result for a game (scores can be omitted for random generation)"
+          }
+        },
+        {
+          "name": "Generate Random Game Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "http://localhost:3001/games/{{gameId}}/result",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3001",
+              "path": ["games", "{{gameId}}", "result"]
+            },
+            "description": "Generate random result for a game"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Betting Service",
+      "item": [
+        {
+          "name": "Create Mock Users",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3002/users/mock/create",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["users", "mock", "create"]
+            },
+            "description": "Create mock users (john_doe, jane_smith, bob_jones)"
+          }
+        },
+        {
+          "name": "Get User by Username",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3002/users/username/john_doe",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["users", "username", "john_doe"]
+            },
+            "description": "Get user details by username"
+          }
+        },
+        {
+          "name": "Place Bet - Home Win",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"gameId\": \"{{gameId}}\",\n  \"betType\": \"MONEYLINE\",\n  \"selection\": \"home\",\n  \"amount\": 100\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3002/bets",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["bets"]
+            },
+            "description": "Place a bet on home team to win"
+          }
+        },
+        {
+          "name": "Place Bet - Away Win",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"gameId\": \"{{gameId}}\",\n  \"betType\": \"MONEYLINE\",\n  \"selection\": \"away\",\n  \"amount\": 50\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3002/bets",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["bets"]
+            },
+            "description": "Place a bet on away team to win"
+          }
+        },
+        {
+          "name": "Place Bet - Insufficient Funds (Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"gameId\": \"{{gameId}}\",\n  \"betType\": \"MONEYLINE\",\n  \"selection\": \"home\",\n  \"amount\": 10000\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3002/bets",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["bets"]
+            },
+            "description": "Test insufficient funds validation"
+          }
+        },
+        {
+          "name": "Place Bet - Below Minimum (Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"gameId\": \"{{gameId}}\",\n  \"betType\": \"MONEYLINE\",\n  \"selection\": \"home\",\n  \"amount\": 0.5\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3002/bets",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["bets"]
+            },
+            "description": "Test minimum bet amount validation"
+          }
+        },
+        {
+          "name": "Place Bet - Duplicate (Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"gameId\": \"{{gameId}}\",\n  \"betType\": \"MONEYLINE\",\n  \"selection\": \"home\",\n  \"amount\": 100\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3002/bets",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["bets"]
+            },
+            "description": "Test duplicate bet prevention (run after placing a bet)"
+          }
+        },
+        {
+          "name": "Get User Bets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3002/bets/user/{{userId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["bets", "user", "{{userId}}"]
+            },
+            "description": "Get all bets for a specific user"
+          }
+        },
+        {
+          "name": "Get User Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3002/users/{{userId}}/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["users", "{{userId}}", "status"]
+            },
+            "description": "Get user status with balance, stats, and all bets"
+          }
+        },
+        {
+          "name": "Settle Bets for Game",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3002/bets/settle/{{gameId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3002",
+              "path": ["bets", "settle", "{{gameId}}"]
+            },
+            "description": "Settle all bets for a finished game"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "gameId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

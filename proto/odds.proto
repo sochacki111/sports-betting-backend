@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package odds;
+
+service OddsService {
+  rpc GetGameOdds (GetGameOddsRequest) returns (GetGameOddsResponse);
+  rpc ValidateGame (ValidateGameRequest) returns (ValidateGameResponse);
+  rpc GetGamesByIds (GetGamesByIdsRequest) returns (GetGamesByIdsResponse);
+}
+
+message GetGameOddsRequest {
+  string gameId = 1;
+}
+
+message GetGameOddsResponse {
+  bool success = 1;
+  string message = 2;
+  GameOdds gameOdds = 3;
+}
+
+message ValidateGameRequest {
+  string gameId = 1;
+}
+
+message ValidateGameResponse {
+  bool isValid = 1;
+  string message = 2;
+  string status = 3;
+}
+
+message GetGamesByIdsRequest {
+  repeated string gameIds = 1;
+}
+
+message GetGamesByIdsResponse {
+  repeated GameWithOdds games = 1;
+}
+
+message GameOdds {
+  string gameId = 1;
+  string homeTeam = 2;
+  string awayTeam = 3;
+  double homeOdds = 4;
+  double awayOdds = 5;
+  double drawOdds = 6;
+  string status = 7;
+  string startTime = 8;
+}
+
+message GameWithOdds {
+  string id = 1;
+  string homeTeam = 2;
+  string awayTeam = 3;
+  string sportKey = 4;
+  string status = 5;
+  string startTime = 6;
+  int32 homeScore = 7;
+  int32 awayScore = 8;
+  repeated Odds odds = 9;
+}
+
+message Odds {
+  string id = 1;
+  string bookmaker = 2;
+  string market = 3;
+  double homeOdds = 4;
+  double awayOdds = 5;
+  double drawOdds = 6;
+}
