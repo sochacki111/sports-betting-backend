@@ -98,6 +98,8 @@ npm run prisma:migrate:betting
 npm run prisma:generate
 ```
 
+**Note:** If you get peer dependency errors during `npm install`, the dependencies have been tested and work correctly. The warnings can be safely ignored.
+
 ## Running the Services
 
 ### Development Mode
