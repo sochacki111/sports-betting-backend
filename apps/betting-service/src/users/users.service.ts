@@ -12,9 +12,8 @@ export class UsersService {
   ) {}
 
   async createMockUsers() {
-    const defaultBalance = this.configService.get<number>(
-      'DEFAULT_USER_BALANCE',
-      1000,
+    const defaultBalance = Number(
+      this.configService.get<string>('DEFAULT_USER_BALANCE', '1000'),
     );
 
     const mockUsers = [

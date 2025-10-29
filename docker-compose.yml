@@ -1,0 +1,82 @@
+services:
+  # PostgreSQL for Odds Service
+  odds-postgres:
+    image: postgres:18-alpine
+    container_name: odds-postgres
+    environment:
+      POSTGRES_DB: odds_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - odds_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL for Betting Service
+  betting-postgres:
+    image: postgres:18-alpine
+    container_name: betting-postgres
+    environment:
+      POSTGRES_DB: betting_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - betting_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Odds Service
+  odds-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.odds
+    container_name: odds-service
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      GRPC_PORT: 5001
+      DATABASE_URL: postgresql://postgres:postgres@odds-postgres:5432/odds_db
+      THE_ODDS_API_KEY: ${THE_ODDS_API_KEY}
+    ports:
+      - "3001:3001"
+      - "5001:5001"
+    depends_on:
+      odds-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy --schema=./prisma/odds.prisma && node dist/apps/odds-service/main.js"
+
+  # Betting Service
+  betting-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.betting
+    container_name: betting-service
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DATABASE_URL: postgresql://postgres:postgres@betting-postgres:5432/betting_db
+      BETTING_GRPC_URL: odds-service:5001
+    ports:
+      - "3002:3002"
+    depends_on:
+      odds-service:
+        condition: service_started
+      betting-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy --schema=./prisma/betting.prisma && node dist/apps/betting-service/main.js"
+
+volumes:
+  odds_data:
+  betting_data:

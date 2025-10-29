@@ -1,0 +1,29 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+
+# Copy prisma schemas
+COPY prisma ./prisma
+
+# Install dependencies
+RUN npm ci
+
+# Copy application code
+COPY apps/odds-service ./apps/odds-service
+COPY libs ./libs
+
+# Generate Prisma client
+RUN npm run prisma:generate:odds
+
+# Build the application
+RUN npm run build:odds
+
+# Expose ports (HTTP and gRPC)
+EXPOSE 3001 5001
+
+# Start the application
+CMD ["node", "dist/apps/odds-service/main.js"]

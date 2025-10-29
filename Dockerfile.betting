@@ -1,0 +1,29 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+
+# Copy prisma schemas
+COPY prisma ./prisma
+
+# Install dependencies
+RUN npm ci
+
+# Copy application code
+COPY apps/betting-service ./apps/betting-service
+COPY libs ./libs
+
+# Generate Prisma client
+RUN npm run prisma:generate:betting
+
+# Build the application
+RUN npm run build:betting
+
+# Expose HTTP port
+EXPOSE 3002
+
+# Start the application
+CMD ["node", "dist/apps/betting-service/main.js"]
