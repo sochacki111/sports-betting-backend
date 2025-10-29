@@ -174,13 +174,13 @@ export class BetsService {
 
     for (const bet of pendingBets) {
       const strategy = this.strategyFactory.getStrategy(bet.betType);
-      const settlementResult = strategy.settleBet(
-        bet.selection,
-        game.homeScore,
-        game.awayScore,
-        game.homeTeam,
-        game.awayTeam,
-      );
+      const settlementResult = strategy.settleBet({
+        selection: bet.selection,
+        homeScore: game.homeScore,
+        awayScore: game.awayScore,
+        homeTeam: game.homeTeam,
+        awayTeam: game.awayTeam,
+      });
 
       // Calculate payout
       let payout = 0;

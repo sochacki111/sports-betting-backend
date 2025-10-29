@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BetStrategy, BetResult } from './bet-strategy.interface';
+import { BetStrategy, BetResult, BetContext } from './bet-strategy.interface';
 
 @Injectable()
 export class MoneylineStrategy implements BetStrategy {
@@ -8,13 +8,8 @@ export class MoneylineStrategy implements BetStrategy {
     return amount * odds;
   }
 
-  settleBet(
-    selection: string,
-    homeScore: number,
-    awayScore: number,
-    homeTeam: string,
-    awayTeam: string,
-  ): BetResult {
+  settleBet(context: BetContext): BetResult {
+    const { selection, homeScore, awayScore, homeTeam, awayTeam } = context;
     let result: 'WON' | 'LOST' | 'PUSH';
     let message: string;
 

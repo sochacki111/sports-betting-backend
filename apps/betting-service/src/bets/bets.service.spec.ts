@@ -21,6 +21,9 @@ describe('BetsService', () => {
       create: jest.fn(),
       update: jest.fn(),
     },
+    user: {
+      update: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
 
