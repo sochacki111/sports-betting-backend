@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
@@ -11,6 +12,8 @@ async function bootstrap() {
 
   // Use Pino logger
   app.useLogger(app.get(Logger));
+
+  const configService = app.get(ConfigService);
 
   // Enable validation globally
   app.useGlobalPipes(
@@ -36,7 +39,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   // Setup gRPC microservice
-  const grpcPort = process.env.ODDS_SERVICE_GRPC_PORT || 5001;
+  const grpcPort = configService.get<number>('grpcPort', 5001);
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
@@ -48,7 +51,7 @@ async function bootstrap() {
 
   await app.startAllMicroservices();
 
-  const port = process.env.ODDS_SERVICE_PORT || 3001;
+  const port = configService.get<number>('port', 3001);
   await app.listen(port);
 
   const logger = app.get(Logger);

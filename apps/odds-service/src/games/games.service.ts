@@ -38,8 +38,11 @@ export class GamesService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {
-    this.apiKey = this.configService.get<string>('THE_ODDS_API_KEY', '');
-    this.apiBaseUrl = this.configService.get<string>('THE_ODDS_API_BASE_URL', 'https://api.the-odds-api.com/v4');
+    this.apiKey = this.configService.get<string>('oddsApi.key', '');
+    this.apiBaseUrl = this.configService.get<string>(
+      'oddsApi.baseUrl',
+      'https://api.the-odds-api.com/v4',
+    );
   }
 
   async refreshOdds(): Promise<{ message: string; gamesUpdated: number }> {
@@ -47,7 +50,11 @@ export class GamesService {
 
     try {
       // Fetch odds for popular sports (e.g., basketball, soccer)
-      const sports = ['basketball_nba', 'soccer_epl', 'americanfootball_nfl'];
+      const sports = this.configService.get<string[]>('oddsApi.supportedSports', [
+        'basketball_nba',
+        'soccer_epl',
+        'americanfootball_nfl',
+      ]);
       let totalGamesUpdated = 0;
 
       for (const sport of sports) {
@@ -67,6 +74,7 @@ export class GamesService {
           const games = response.data;
           this.logger.log(`Fetched ${games.length} games for ${sport}`);
 
+          // TODO: Optimize with batch operations
           for (const gameData of games) {
             await this.upsertGameWithOdds(gameData);
             totalGamesUpdated++;
@@ -198,13 +206,13 @@ export class GamesService {
       throw new BadRequestException('Game is already finished');
     }
 
-    if (game.status === GameStatus.UPCOMING) {
-      // Check if game has started (current time > start time)
-      const now = new Date();
-      if (now < game.startTime) {
-        throw new BadRequestException('Game has not started yet');
-      }
-    }
+    // Commented out for demo purposes - normally would check if game started
+    // if (game.status === GameStatus.UPCOMING) {
+    //   const now = new Date();
+    //   if (now < game.startTime) {
+    //     throw new BadRequestException('Game has not started yet');
+    //   }
+    // }
 
     // Generate random scores if not provided
     const homeScore =

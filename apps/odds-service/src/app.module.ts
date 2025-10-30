@@ -5,12 +5,14 @@ import { GamesModule } from './games/games.module';
 import { OddsModule } from './odds/odds.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { GrpcModule } from './grpc/grpc.module';
+import configuration from './config/configuration';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      load: [configuration],
     }),
     LoggerModule.forRoot({
       pinoHttp: {
