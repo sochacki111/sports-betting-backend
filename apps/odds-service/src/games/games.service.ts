@@ -74,11 +74,8 @@ export class GamesService {
           const games = response.data;
           this.logger.log(`Fetched ${games.length} games for ${sport}`);
 
-          // TODO: Optimize with batch operations
-          for (const gameData of games) {
-            await this.upsertGameWithOdds(gameData);
-            totalGamesUpdated++;
-          }
+          // Batch upsert games with odds in a single transaction
+          totalGamesUpdated += await this.batchUpsertGamesWithOdds(games);
         } catch (error) {
           this.logger.warn(`Failed to fetch odds for ${sport}: ${error.message}`);
         }
@@ -95,61 +92,145 @@ export class GamesService {
     }
   }
 
-  private async upsertGameWithOdds(gameData: OddsApiGame): Promise<void> {
-    const game = await this.prisma.game.upsert({
-      where: { externalId: gameData.id },
-      update: {
-        homeTeam: gameData.home_team,
-        awayTeam: gameData.away_team,
-        startTime: new Date(gameData.commence_time),
-        updatedAt: new Date(),
-      },
-      create: {
-        externalId: gameData.id,
-        sportKey: gameData.sport_key,
-        homeTeam: gameData.home_team,
-        awayTeam: gameData.away_team,
-        startTime: new Date(gameData.commence_time),
-        status: GameStatus.UPCOMING,
-      },
-    });
+  /**
+   * Batch upsert games with odds in a single transaction
+   * This is significantly more efficient than individual upserts
+   */
+  private async batchUpsertGamesWithOdds(
+    gamesData: OddsApiGame[],
+  ): Promise<number> {
+    if (gamesData.length === 0) return 0;
 
-    // Delete old odds for this game
-    await this.prisma.odds.deleteMany({
-      where: { gameId: game.id },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      let processedCount = 0;
 
-    // Insert new odds
-    if (gameData.bookmakers && gameData.bookmakers.length > 0) {
-      for (const bookmaker of gameData.bookmakers) {
-        const h2hMarket = bookmaker.markets.find((m) => m.key === 'h2h');
-        if (!h2hMarket) continue;
+      // Step 1: Get existing games by externalId
+      const externalIds = gamesData.map((g) => g.id);
+      const existingGames = await tx.game.findMany({
+        where: { externalId: { in: externalIds } },
+        select: { id: true, externalId: true },
+      });
 
-        const homeOutcome = h2hMarket.outcomes.find(
-          (o) => o.name === gameData.home_team,
+      const existingGameMap = new Map(
+        existingGames.map((g) => [g.externalId, g.id]),
+      );
+
+      // Step 2: Separate games into updates and creates
+      const gamesToUpdate: Array<{ id: string; data: OddsApiGame }> = [];
+      const gamesToCreate: OddsApiGame[] = [];
+
+      for (const gameData of gamesData) {
+        const existingGameId = existingGameMap.get(gameData.id);
+        if (existingGameId) {
+          gamesToUpdate.push({ id: existingGameId, data: gameData });
+        } else {
+          gamesToCreate.push(gameData);
+        }
+      }
+
+      // Step 3: Batch update existing games
+      if (gamesToUpdate.length > 0) {
+        await Promise.all(
+          gamesToUpdate.map((item) =>
+            tx.game.update({
+              where: { id: item.id },
+              data: {
+                homeTeam: item.data.home_team,
+                awayTeam: item.data.away_team,
+                startTime: new Date(item.data.commence_time),
+                updatedAt: new Date(),
+              },
+            }),
+          ),
         );
-        const awayOutcome = h2hMarket.outcomes.find(
-          (o) => o.name === gameData.away_team,
-        );
-        const drawOutcome = h2hMarket.outcomes.find((o) => o.name === 'Draw');
+        processedCount += gamesToUpdate.length;
+      }
 
-        await this.prisma.odds.create({
-          data: {
-            gameId: game.id,
+      // Step 4: Batch create new games
+      let createdGames: Array<{ id: string; externalId: string | null }> = [];
+      if (gamesToCreate.length > 0) {
+        await tx.game.createMany({
+          data: gamesToCreate.map((gameData) => ({
+            externalId: gameData.id,
+            sportKey: gameData.sport_key,
+            homeTeam: gameData.home_team,
+            awayTeam: gameData.away_team,
+            startTime: new Date(gameData.commence_time),
+            status: GameStatus.UPCOMING,
+          })),
+        });
+
+        // Get the created games' IDs
+        createdGames = await tx.game.findMany({
+          where: { externalId: { in: gamesToCreate.map((g) => g.id) } },
+          select: { id: true, externalId: true },
+        });
+        processedCount += createdGames.length;
+      }
+
+      // Step 5: Update the game map with newly created games
+      for (const game of createdGames) {
+        existingGameMap.set(game.externalId!, game.id);
+      }
+
+      // Step 6: Delete all old odds for these games in batch
+      const allGameIds = Array.from(existingGameMap.values());
+      await tx.odds.deleteMany({
+        where: { gameId: { in: allGameIds } },
+      });
+
+      // Step 7: Prepare and batch insert all new odds
+      const oddsToCreate: Array<{
+        gameId: string;
+        bookmaker: string;
+        market: string;
+        homeOdds: number | undefined;
+        awayOdds: number | undefined;
+        drawOdds: number | undefined;
+        lastUpdate: Date;
+      }> = [];
+
+      for (const gameData of gamesData) {
+        const gameId = existingGameMap.get(gameData.id);
+        if (!gameId || !gameData.bookmakers) continue;
+
+        for (const bookmaker of gameData.bookmakers) {
+          const h2hMarket = bookmaker.markets.find((m) => m.key === 'h2h');
+          if (!h2hMarket) continue;
+
+          const homeOutcome = h2hMarket.outcomes.find(
+            (o) => o.name === gameData.home_team,
+          );
+          const awayOutcome = h2hMarket.outcomes.find(
+            (o) => o.name === gameData.away_team,
+          );
+          const drawOutcome = h2hMarket.outcomes.find((o) => o.name === 'Draw');
+
+          oddsToCreate.push({
+            gameId,
             bookmaker: bookmaker.key,
             market: 'h2h',
             homeOdds: homeOutcome?.price,
             awayOdds: awayOutcome?.price,
             drawOdds: drawOutcome?.price,
             lastUpdate: new Date(),
-          },
+          });
+        }
+      }
+
+      // Step 8: Batch insert all odds
+      if (oddsToCreate.length > 0) {
+        await tx.odds.createMany({
+          data: oddsToCreate,
         });
       }
-    }
 
-    this.logger.debug(
-      `Upserted game: ${game.homeTeam} vs ${game.awayTeam} with ${gameData.bookmakers?.length || 0} bookmakers`,
-    );
+      this.logger.debug(
+        `Batch upserted ${processedCount} games with ${oddsToCreate.length} odds records`,
+      );
+
+      return processedCount;
+    });
   }
 
   async findAll(status?: string) {
