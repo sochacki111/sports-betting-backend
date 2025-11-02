@@ -11,4 +11,9 @@ export default () => ({
       ? process.env.SUPPORTED_SPORTS.split(',').map((sport) => sport.trim())
       : ['basketball_nba', 'soccer_epl', 'americanfootball_nfl'],
   },
+  gameFinishSimulator: {
+    enabled: process.env.ENABLE_GAME_FINISH_SIMULATOR === 'true',
+    cronExpression: process.env.GAME_FINISH_CRON || '0 */5 * * * *',
+    hoursThreshold: parseInt(process.env.GAME_FINISH_HOURS_THRESHOLD || '3', 10),
+  },
 });

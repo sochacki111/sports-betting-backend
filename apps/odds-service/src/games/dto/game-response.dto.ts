@@ -39,6 +39,7 @@ export class GameResponseDto {
   @ApiProperty()
   startTime: Date;
 
+  // TODO mb to remove as no need status
   @ApiProperty({ enum: ['UPCOMING', 'LIVE', 'FINISHED', 'CANCELLED'] })
   status: string;
 

@@ -33,6 +33,8 @@ export class GamesService {
   private readonly logger = new Logger(GamesService.name);
   private readonly apiKey: string;
   private readonly apiBaseUrl: string;
+  private readonly regions: string;
+  private readonly markets: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -43,6 +45,8 @@ export class GamesService {
       'oddsApi.baseUrl',
       'https://api.the-odds-api.com/v4',
     );
+    this.regions = this.configService.get<string>('oddsApi.regions', 'us,uk');
+    this.markets = this.configService.get<string>('oddsApi.markets', 'h2h');
   }
 
   async refreshOdds(): Promise<{ message: string; gamesUpdated: number }> {
@@ -65,8 +69,8 @@ export class GamesService {
           const response = await axios.get<OddsApiGame[]>(url, {
             params: {
               apiKey: this.apiKey,
-              regions: 'us,uk',
-              markets: 'h2h',
+              regions: this.regions,
+              markets: this.markets,
               oddsFormat: 'decimal',
             },
           });

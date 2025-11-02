@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 import { GamesModule } from './games/games.module';
 import { OddsModule } from './odds/odds.module';
@@ -14,6 +15,7 @@ import configuration from './config/configuration';
       envFilePath: '.env',
       load: [configuration],
     }),
+    ScheduleModule.forRoot(),
     LoggerModule.forRoot({
       pinoHttp: {
         transport:
