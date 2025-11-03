@@ -390,12 +390,10 @@ psql -h localhost -p 5433 -U postgres -d betting_db
 npm run prisma:generate
 ```
 
-### The Odds API Issues
-- Check API key is valid
-- Free tier has 500 requests/month limit
-- API returns empty array if no games available
 
 ## Future Enhancements
+
+- [ ] **Feature toggles for simulation handlers** - Currently all simulation handlers (game finish simulator, score generation, bet settlement) are always active. Consider adding toggles via runtime feature flags.
 
 - [ ] User authentication (JWT)
 - [ ] WebSocket for real-time odds updates
@@ -418,7 +416,3 @@ For issues or questions:
 2. Review Postman collection
 3. Check application logs
 4. Verify database connections
-
----
-
-Built with NestJS + gRPC + Prisma + PostgreSQL
