@@ -18,15 +18,6 @@ This project consists of two microservices:
 - Communicates with Odds Service via gRPC
 - Settles bets based on game results
 
-### Tech Stack
-- **Framework**: NestJS 11
-- **Database**: PostgreSQL with Prisma ORM
-- **Communication**: REST APIs (external) + gRPC (inter-service) + RabbitMQ
-- **Logging**: Pino
-- **Documentation**: Swagger/OpenAPI
-- **Validation**: class-validator
-- **Testing**: Jest
-
 ## Features
 
 ### Odds Service
@@ -50,7 +41,7 @@ This project consists of two microservices:
 ## Prerequisites
 
 - Node.js 18+ and npm
-- PostgreSQL 14+
+- Docker
 - The Odds API key (free tier: https://the-odds-api.com/)
 
 ## Installation
@@ -71,14 +62,6 @@ Edit `.env` and set:
 - Database URLs (default uses localhost with different ports)
 
 3. **Setup PostgreSQL databases**
-
-Create two databases:
-```sql
-CREATE DATABASE odds_db;
-CREATE DATABASE betting_db;
-```
-
-Or use Docker:
 ```bash
 # Odds DB
 docker run --name odds-postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
@@ -98,8 +81,6 @@ npm run prisma:migrate:betting
 npm run prisma:generate
 ```
 
-**Note:** If you get peer dependency errors during `npm install`, the dependencies have been tested and work correctly. The warnings can be safely ignored.
-
 ## Running the Services
 
 ### Development Mode
@@ -116,18 +97,6 @@ npm run start:odds:dev
 npm run start:betting:dev
 ```
 
-### Production Mode
-
-```bash
-# Build
-npm run build:odds
-npm run build:betting
-
-# Run
-npm run start:odds:prod
-npm run start:betting:prod
-```
-
 ## API Documentation
 
 Once running, access Swagger documentation:
@@ -137,10 +106,6 @@ Once running, access Swagger documentation:
 ## Quick Testing Flow
 
 Here's the complete end-to-end flow to test the application:
-
-**Prerequisites:**
-- Start PostgreSQL databases (Docker)
-- Start both services (`npm run start:odds:dev` and `npm run start:betting:dev`)
 
 **Testing Steps:**
 
@@ -293,23 +258,8 @@ MIN_BET_AMOUNT=1
 MAX_BET_AMOUNT=500
 ```
 
-## Bet Validation Rules
-
-The system prevents common betting errors:
-
-1. **Balance Check**: User must have sufficient funds
-2. **Amount Limits**: Bets must be between MIN and MAX amounts
-3. **Duplicate Prevention**: Same user cannot place multiple bets with same selection on same game
-4. **Game Validation**:
-   - Game must exist
-   - Game must be UPCOMING
-   - Game must not have started yet
-5. **Odds Validation**: Odds are fetched in real-time from Odds Service
 
 ## Testing
-
-### Test Commands
-
 ```bash
 # Run all unit tests
 npm test
@@ -318,17 +268,11 @@ npm test
 npm run test:all
 
 # Run specific service tests
-npm run test:odds           # Odds service only (25 tests)
-npm run test:betting        # Betting service only (36 tests)
+npm run test:odds
+npm run test:betting
 
 # Run E2E tests
-npm run test:e2e            # Odds service E2E (3 tests)
-npm run test:e2e:odds       # Alias for above
-
-# Development
-npm run test:watch          # Watch mode (re-run on changes)
-npm run test:cov            # Coverage report
-npm run test:debug          # Debug mode
+npm run test:e2e:odds
 ```
 
 ## Database Management
@@ -350,57 +294,18 @@ npm run prisma:migrate:odds
 npm run prisma:migrate:betting
 ```
 
-## Bet Types (Strategy Pattern)
+## Bet Validation Rules
 
-Currently implemented:
-- **MONEYLINE**: Simple winner selection (home/away/draw)
+The system prevents common betting errors:
 
-Easy to extend with new strategies:
-```typescript
-// Future implementations
-- SPREAD: Team wins by X points
-- OVER_UNDER: Total score over/under threshold
-```
-
-## Logging
-
-Pino logger is configured for both services:
-- **Development**: Pretty-printed colored logs
-- **Production**: JSON logs for log aggregation
-
-Log levels: `debug` (dev) | `info` (prod)
-
-## Error Handling
-
-Common error responses:
-
-| Status | Error | Reason |
-|--------|-------|--------|
-| 400 | Bad Request | Invalid input, insufficient funds, bet limits |
-| 404 | Not Found | User/Game not found |
-| 409 | Conflict | Duplicate bet |
-| 500 | Internal Server Error | Unexpected error |
-
-## Troubleshooting
-
-### gRPC Connection Issues
-```bash
-# Ensure Odds Service gRPC is running
-curl http://localhost:3001/games
-# Should return 200 OK
-
-# Check BETTING_GRPC_URL in .env matches ODDS_SERVICE_GRPC_PORT
-```
-
-### Database Connection Issues
-```bash
-# Test PostgreSQL connections
-psql -h localhost -p 5432 -U postgres -d odds_db
-psql -h localhost -p 5433 -U postgres -d betting_db
-
-# Regenerate Prisma clients
-npm run prisma:generate
-```
+1. **Balance Check**: User must have sufficient funds
+2. **Amount Limits**: Bets must be between MIN and MAX amounts
+3. **Duplicate Prevention**: Same user cannot place multiple bets with same selection on same game
+4. **Game Validation**:
+   - Game must exist
+   - Game must be UPCOMING
+   - Game must not have started yet
+5. **Odds Validation**: Odds are fetched in real-time from Odds Service
 
 
 ## Future Enhancements
@@ -416,3 +321,13 @@ npm run prisma:generate
 - [ ] Caching layer (Redis)
 - [ ] Docker Compose setup
 - [ ] CI/CD pipeline
+
+
+### Tech Stack
+- **Framework**: NestJS 11
+- **Database**: PostgreSQL with Prisma ORM
+- **Communication**: REST APIs (external) + gRPC (inter-service) + RabbitMQ
+- **Logging**: Pino
+- **Documentation**: Swagger/OpenAPI
+- **Validation**: class-validator
+- **Testing**: Jest
