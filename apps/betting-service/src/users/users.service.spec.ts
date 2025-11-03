@@ -104,36 +104,6 @@ describe('UsersService', () => {
     });
   });
 
-  describe('findByUsername', () => {
-    it('should return user when found', async () => {
-      const mockUser = {
-        id: 'user-123',
-        username: 'john_doe',
-        balance: 1000,
-      };
-
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-
-      const result = await service.findByUsername('john_doe');
-
-      expect(result).toEqual(mockUser);
-      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { username: 'john_doe' },
-      });
-    });
-
-    it('should throw NotFoundException when user not found', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-
-      await expect(service.findByUsername('non_existent')).rejects.toThrow(
-        NotFoundException,
-      );
-      await expect(service.findByUsername('non_existent')).rejects.toThrow(
-        'User non_existent not found',
-      );
-    });
-  });
-
   describe('findById', () => {
     it('should return user when found', async () => {
       const mockUser = {

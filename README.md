@@ -1,6 +1,6 @@
 # Sports Betting Backend
 
-A microservices-based sports betting platform built with NestJS, featuring real-time odds integration, bet placement, and automated settlement.
+A microservices-based sports betting platform built with NestJS, featuring odds integration, bet placement, and automated settlement.
 
 ## Architecture
 
@@ -21,7 +21,7 @@ This project consists of two microservices:
 ### Tech Stack
 - **Framework**: NestJS 11
 - **Database**: PostgreSQL with Prisma ORM
-- **Communication**: REST APIs (external) + gRPC (inter-service)
+- **Communication**: REST APIs (external) + gRPC (inter-service) + RabbitMQ
 - **Logging**: Pino
 - **Documentation**: Swagger/OpenAPI
 - **Validation**: class-validator
@@ -133,6 +133,59 @@ npm run start:betting:prod
 Once running, access Swagger documentation:
 - **Odds Service**: http://localhost:3001/api/docs
 - **Betting Service**: http://localhost:3002/api/docs
+
+## Quick Testing Flow
+
+Here's the complete end-to-end flow to test the application:
+
+**Prerequisites:**
+- Start PostgreSQL databases (Docker)
+- Start both services (`npm run start:odds:dev` and `npm run start:betting:dev`)
+
+**Testing Steps:**
+
+1. **Create Mock Users** → `POST /users/mock/create`
+   - Creates 3 test users (john_doe, jane_smith, bob_jones)
+   - Each starts with $1,000 balance
+
+2. **Refresh Odds** → `POST /odds/refresh`
+   - Fetches live games from The Odds API
+   - Stores games and odds in database
+
+3. **List Available Games** → `GET /games?status=UPCOMING`
+   - View all upcoming games with odds
+   - Copy a `gameId` for betting
+
+4. **Place a Bet** → `POST /bets`
+   - Bet on home/away team
+   - Amount deducted from balance
+   - Bet status: PENDING
+
+5. **Check User Status** → `GET /users/{userId}/status`
+   - View current balance (should be $900 after $100 bet)
+   - See all bets and statistics
+
+6. **Generate Game Result** → `POST /games/{gameId}/result`
+   - Simulate game finish (random or specific scores)
+   - Game status changes to FINISHED
+
+7. **Settle Bets** → `POST /bets/settle/{gameId}`
+   - Calculate bet outcomes (WON/LOST/PUSH)
+   - Update balances automatically
+   - Bet status: SETTLED
+
+8. **Check Final Balance** → `GET /users/{userId}/status`
+   - If bet won: Balance = $900 + winnings
+   - If bet lost: Balance stays $900
+   - If push (tie): Balance returns to $1,000
+
+**Quick Test (cURL):**
+```bash
+curl -X POST http://localhost:3002/users/mock/create
+curl -X POST http://localhost:3001/odds/refresh
+curl http://localhost:3001/games?status=UPCOMING
+# Use Postman collection for easier testing with all endpoints
+```
 
 ## Usage Flow
 
@@ -278,40 +331,6 @@ npm run test:cov            # Coverage report
 npm run test:debug          # Debug mode
 ```
 
-### Test Coverage
-
-**Total: 64 tests (61 unit + 3 E2E)**
-
-**Odds Service (25 unit tests):**
-- ✅ [GamesService](apps/odds-service/src/games/games.service.spec.ts) - 11 tests
-  - refreshOdds(), validateGame(), generateResult()
-  - findAll(), findOne(), findByIds()
-- ✅ [GameFinishSimulatorService](apps/odds-service/src/games/game-finish-simulator.service.spec.ts) - 7 tests
-  - Cron job, event emission, error handling
-- ✅ [GamesController E2E](apps/odds-service/test/games.e2e-spec.ts) - 3 tests
-
-**Betting Service (36 unit tests):**
-- ✅ [BetsService](apps/betting-service/src/bets/bets.service.spec.ts) - 15 tests
-  - placeBet() - validation, balance checks, duplicates
-  - settleBets() - WON/LOST/PUSH, balance updates
-- ✅ [UsersService](apps/betting-service/src/users/users.service.spec.ts) - 16 tests
-  - createMockUsers(), findById(), getUserStatus(), updateBalance()
-- ✅ [MoneylineStrategy](apps/betting-service/src/bets/strategies/moneyline.strategy.spec.ts) - 5 tests
-  - calculatePotentialWin(), settleBet()
-
-### Running Specific Tests
-
-```bash
-# Run a specific test file
-npm test apps/betting-service/src/bets/bets.service.spec.ts
-
-# Run tests matching a pattern
-npm test -- -t "settleBets"
-
-# Run with verbose output
-npm test -- --verbose
-```
-
 ## Database Management
 
 ### Prisma Studio (Database GUI)
@@ -327,48 +346,8 @@ npm run prisma:studio:betting
 ### Create New Migration
 
 ```bash
-# After modifying schema.prisma files
 npm run prisma:migrate:odds
 npm run prisma:migrate:betting
-```
-
-## Project Structure
-
-```
-sports-betting-backend/
-├── apps/
-│   ├── odds-service/           # Odds microservice
-│   │   ├── src/
-│   │   │   ├── games/          # Games module (REST)
-│   │   │   ├── odds/           # Odds module (REST)
-│   │   │   ├── grpc/           # gRPC server
-│   │   │   ├── prisma/         # Prisma service
-│   │   │   ├── app.module.ts
-│   │   │   └── main.ts
-│   │   ├── prisma/
-│   │   │   └── schema.prisma   # Odds DB schema
-│   │   └── test/
-│   │
-│   └── betting-service/        # Betting microservice
-│       ├── src/
-│       │   ├── bets/           # Bets module
-│       │   │   └── strategies/ # Bet type strategies
-│       │   ├── users/          # Users module
-│       │   ├── odds-client/    # gRPC client
-│       │   ├── prisma/         # Prisma service
-│       │   ├── app.module.ts
-│       │   └── main.ts
-│       ├── prisma/
-│       │   └── schema.prisma   # Betting DB schema
-│       └── test/
-│
-├── proto/
-│   └── odds.proto              # gRPC definitions
-├── postman/
-│   └── Sports-Betting-API.postman_collection.json
-├── .env                        # Environment config
-├── package.json
-└── README.md
 ```
 
 ## Bet Types (Strategy Pattern)
@@ -426,7 +405,7 @@ npm run prisma:generate
 
 ## Future Enhancements
 
-- [ ] **Feature toggles for simulation handlers** - Currently all simulation handlers (game finish simulator, score generation, bet settlement) are always active. Consider adding toggles via runtime feature flags.
+- [ ] **Feature toggles for simulation handlers** - Currently all simulation handlers (game finish simulator, score generation, bet settlement) are always active. Consider adding toggles via feature flags.
 
 - [ ] User authentication (JWT)
 - [ ] WebSocket for real-time odds updates
@@ -437,15 +416,3 @@ npm run prisma:generate
 - [ ] Caching layer (Redis)
 - [ ] Docker Compose setup
 - [ ] CI/CD pipeline
-
-## License
-
-UNLICENSED
-
-## Support
-
-For issues or questions:
-1. Check Swagger documentation
-2. Review Postman collection
-3. Check application logs
-4. Verify database connections

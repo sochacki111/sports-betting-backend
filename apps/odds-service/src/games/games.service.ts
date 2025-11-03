@@ -56,7 +56,6 @@ export class GamesService {
     this.logger.log('Starting odds refresh from The Odds API');
 
     try {
-      // Fetch odds for popular sports (e.g., basketball, soccer)
       const sports = this.configService.get<string[]>('oddsApi.supportedSports', [
         'basketball_nba',
         'soccer_epl',
@@ -81,7 +80,6 @@ export class GamesService {
           const games = response.data;
           this.logger.log(`Fetched ${games.length} games for ${sport}`);
 
-          // Batch upsert games with odds in a single transaction
           totalGamesUpdated += await this.batchUpsertGamesWithOdds(games);
         } catch (error) {
           this.logger.warn(`Failed to fetch odds for ${sport}: ${error.message}`);
@@ -99,10 +97,6 @@ export class GamesService {
     }
   }
 
-  /**
-   * Batch upsert games with odds in a single transaction
-   * This is significantly more efficient than individual upserts
-   */
   private async batchUpsertGamesWithOdds(
     gamesData: OddsApiGame[],
   ): Promise<number> {
@@ -304,7 +298,7 @@ export class GamesService {
       throw new BadRequestException('Game is already finished');
     }
 
-    // Commented out for demo purposes - normally would check if game started
+    // TODO Commented out for demo purposes - normally would check if game started
     // if (game.status === GameStatus.UPCOMING) {
     //   const now = new Date();
     //   if (now < game.startTime) {

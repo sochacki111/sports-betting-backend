@@ -33,18 +33,6 @@ export class UsersService {
     this.logger.log('✅ Mock users created/verified');
   }
 
-  async findByUsername(username: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { username },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`User ${username} not found`);
-    }
-
-    return user;
-  }
-
   async findById(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },

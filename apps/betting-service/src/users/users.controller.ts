@@ -23,13 +23,4 @@ export class UsersController {
   async getUserStatus(@Param('userId') userId: string) {
     return this.usersService.getUserStatus(userId);
   }
-
-  @Get('username/:username')
-  @ApiOperation({ summary: 'Get user by username' })
-  @ApiParam({ name: 'username', description: 'Username' })
-  @ApiResponse({ status: 200, description: 'User found' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async getUserByUsername(@Param('username') username: string) {
-    return this.usersService.findByUsername(username);
-  }
 }
