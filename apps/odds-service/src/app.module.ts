@@ -6,6 +6,8 @@ import { GamesModule } from './games/games.module';
 import { OddsModule } from './odds/odds.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { GrpcModule } from './grpc/grpc.module';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
+import { EventsModule } from './events/events.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -43,9 +45,11 @@ import configuration from './config/configuration';
       },
     }),
     PrismaModule,
+    RabbitmqModule,
     GamesModule,
     OddsModule,
     GrpcModule,
+    EventsModule,
   ],
 })
 export class AppModule {}

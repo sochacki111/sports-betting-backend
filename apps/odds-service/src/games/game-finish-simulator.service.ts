@@ -1,8 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { GameStatus } from '@prisma/odds-client';
+import {
+  GameFinishedEvent,
+  GAME_FINISHED_EVENT,
+} from '../events/game-finished.event';
 
 @Injectable()
 export class GameFinishSimulatorService {
@@ -11,6 +16,7 @@ export class GameFinishSimulatorService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    @Inject('RABBITMQ_SERVICE') private readonly rabbitClient: ClientProxy,
   ) {}
 
   @Cron('0 */5 * * * *', {
@@ -66,8 +72,21 @@ export class GameFinishSimulatorService {
         `Successfully auto-finished ${result.count} games. IDs: ${gameIds.join(', ')}`,
       );
 
-      // Phase 2: This is where we'll emit RabbitMQ event
-      // TODO: Emit 'game.finished' event for each game
+      // Phase 2: Emit RabbitMQ events for each finished game
+      for (const game of gamesToFinish) {
+        const event = new GameFinishedEvent({
+          gameId: game.id,
+          homeTeam: game.homeTeam,
+          awayTeam: game.awayTeam,
+          finishedAt: new Date(),
+        });
+
+        this.rabbitClient.emit(GAME_FINISHED_EVENT, event);
+
+        this.logger.log(
+          `Published ${GAME_FINISHED_EVENT} event for game ${game.id}`,
+        );
+      }
     } catch (error) {
       this.logger.error('Error auto-finishing games', error);
     }

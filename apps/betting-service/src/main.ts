@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
@@ -33,6 +34,22 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
+  // Setup RabbitMQ microservice for event listening
+  const rabbitmqUrl =
+    process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [rabbitmqUrl],
+      queue: 'game_events',
+      queueOptions: {
+        durable: true,
+      },
+    },
+  });
+
+  await app.startAllMicroservices();
+
   const port = process.env.BETTING_SERVICE_PORT || 3002;
   await app.listen(port);
 
@@ -43,6 +60,7 @@ async function bootstrap() {
   logger.log(
     `📚 Swagger documentation available at: http://localhost:${port}/api/docs`,
   );
+  logger.log(`🐰 RabbitMQ consumer connected to: ${rabbitmqUrl}`);
 }
 
 bootstrap();

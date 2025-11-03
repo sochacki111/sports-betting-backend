@@ -49,6 +49,22 @@ async function bootstrap() {
     },
   });
 
+  // Setup RabbitMQ microservice for event listening
+  const rabbitmqUrl = configService.get<string>(
+    'rabbitmq.url',
+    'amqp://guest:guest@localhost:5672',
+  );
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [rabbitmqUrl],
+      queue: 'game_events',
+      queueOptions: {
+        durable: true,
+      },
+    },
+  });
+
   await app.startAllMicroservices();
 
   const port = configService.get<number>('port', 3001);
@@ -60,6 +76,7 @@ async function bootstrap() {
     `📚 Swagger documentation available at: http://localhost:${port}/api/docs`,
   );
   logger.log(`🔌 gRPC server running on: localhost:${grpcPort}`);
+  logger.log(`🐰 RabbitMQ consumer connected to: ${rabbitmqUrl}`);
 }
 
 bootstrap();

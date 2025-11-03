@@ -1,18 +1,13 @@
-import { Module, Provider } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { GamesService } from './games.service';
 import { GamesController } from './games.controller';
 import { GameFinishSimulatorService } from './game-finish-simulator.service';
-
-const providers: Provider[] = [GamesService];
-
-// Conditionally add GameFinishSimulatorService based on environment
-if (process.env.ENABLE_GAME_FINISH_SIMULATOR === 'true') {
-  providers.push(GameFinishSimulatorService);
-}
+import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
 
 @Module({
+  imports: [RabbitmqModule],
   controllers: [GamesController],
-  providers,
+  providers: [GamesService, GameFinishSimulatorService],
   exports: [GamesService],
 })
 export class GamesModule {}

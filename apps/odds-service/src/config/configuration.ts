@@ -12,8 +12,10 @@ export default () => ({
       : ['basketball_nba', 'soccer_epl', 'americanfootball_nfl'],
   },
   gameFinishSimulator: {
-    enabled: process.env.ENABLE_GAME_FINISH_SIMULATOR === 'true',
     cronExpression: process.env.GAME_FINISH_CRON || '0 */5 * * * *',
     hoursThreshold: parseInt(process.env.GAME_FINISH_HOURS_THRESHOLD || '3', 10),
+  },
+  rabbitmq: {
+    url: process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672',
   },
 });
