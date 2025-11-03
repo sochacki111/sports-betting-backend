@@ -14,11 +14,11 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "http://localhost:3001/odds/refresh",
+              "raw": "http://localhost:3001/games/refresh-odds",
               "protocol": "http",
               "host": ["localhost"],
               "port": "3001",
-              "path": ["odds", "refresh"]
+              "path": ["games", "refresh-odds"]
             },
             "description": "Fetch and update odds from The Odds API"
           }
@@ -133,11 +133,11 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "http://localhost:3002/users/mock/create",
+              "raw": "http://localhost:3002/users/mock",
               "protocol": "http",
               "host": ["localhost"],
               "port": "3002",
-              "path": ["users", "mock", "create"]
+              "path": ["users", "mock"]
             },
             "description": "Create mock users (john_doe, jane_smith, bob_jones)"
           }
