@@ -9,6 +9,9 @@ import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { GameStatus } from '@prisma/odds-client';
 import { GenerateResultDto } from './dto/generate-result.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import { calculatePagination } from '../common/helpers/pagination.helper';
 
 interface OddsApiGame {
   id: string;
@@ -237,20 +240,30 @@ export class GamesService {
     });
   }
 
-  async findAll(status?: string) {
+  async findAll(
+    status?: string,
+    paginationQuery?: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<any>> {
+    const { page, limit, skip } = calculatePagination(paginationQuery);
+
     const where = status ? { status: status as GameStatus } : {};
 
-    const games = await this.prisma.game.findMany({
-      where,
-      include: {
-        odds: true,
-      },
-      orderBy: {
-        startTime: 'asc',
-      },
-    });
+    const [total, games] = await Promise.all([
+      this.prisma.game.count({ where }),
+      this.prisma.game.findMany({
+        where,
+        include: {
+          odds: true,
+        },
+        orderBy: {
+          startTime: 'asc',
+        },
+        skip,
+        take: limit,
+      }),
+    ]);
 
-    return games;
+    return new PaginatedResponseDto(games, total, page, limit);
   }
 
   async findOne(id: string) {

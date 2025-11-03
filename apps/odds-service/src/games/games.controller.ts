@@ -18,6 +18,8 @@ import {
 import { GamesService } from './games.service';
 import { GameResponseDto } from './dto/game-response.dto';
 import { GenerateResultDto } from './dto/generate-result.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 
 @ApiTags('games')
 @Controller('games')
@@ -25,7 +27,7 @@ export class GamesController {
   constructor(private readonly gamesService: GamesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all games with odds' })
+  @ApiOperation({ summary: 'Get all games with odds (paginated)' })
   @ApiQuery({
     name: 'status',
     required: false,
@@ -33,11 +35,36 @@ export class GamesController {
   })
   @ApiResponse({
     status: 200,
-    description: 'List of games',
-    type: [GameResponseDto],
+    description: 'Paginated list of games',
+    schema: {
+      allOf: [
+        {
+          properties: {
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/GameResponseDto' },
+            },
+            meta: {
+              type: 'object',
+              properties: {
+                total: { type: 'number' },
+                page: { type: 'number' },
+                limit: { type: 'number' },
+                totalPages: { type: 'number' },
+                hasNext: { type: 'boolean' },
+                hasPrevious: { type: 'boolean' },
+              },
+            },
+          },
+        },
+      ],
+    },
   })
-  async findAll(@Query('status') status?: string) {
-    return this.gamesService.findAll(status);
+  async findAll(
+    @Query('status') status?: string,
+    @Query() paginationQuery?: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<GameResponseDto>> {
+    return this.gamesService.findAll(status, paginationQuery);
   }
 
   @Get(':id')

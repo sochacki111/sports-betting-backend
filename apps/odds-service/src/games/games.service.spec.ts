@@ -21,6 +21,7 @@ describe('GamesService', () => {
       update: jest.fn(),
       deleteMany: jest.fn(),
       create: jest.fn(),
+      count: jest.fn(),
     },
     odds: {
       deleteMany: jest.fn(),
@@ -311,36 +312,90 @@ describe('GamesService', () => {
   });
 
   describe('findAll', () => {
-    it('should return all games when no status filter', async () => {
+    it('should return paginated games when no status filter', async () => {
       const mockGames = [
         { id: '1', status: GameStatus.UPCOMING },
         { id: '2', status: GameStatus.FINISHED },
       ];
 
+      mockPrismaService.game.count.mockResolvedValue(2);
       mockPrismaService.game.findMany.mockResolvedValue(mockGames);
 
       const result = await service.findAll();
 
-      expect(result).toEqual(mockGames);
+      expect(result.data).toEqual(mockGames);
+      expect(result.meta).toEqual({
+        total: 2,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+      });
+      expect(mockPrismaService.game.count).toHaveBeenCalledWith({
+        where: {},
+      });
       expect(mockPrismaService.game.findMany).toHaveBeenCalledWith({
         where: {},
         include: { odds: true },
         orderBy: { startTime: 'asc' },
+        skip: 0,
+        take: 20,
       });
     });
 
-    it('should filter games by status', async () => {
+    it('should filter games by status with pagination', async () => {
       const mockGames = [{ id: '1', status: GameStatus.UPCOMING }];
 
+      mockPrismaService.game.count.mockResolvedValue(1);
       mockPrismaService.game.findMany.mockResolvedValue(mockGames);
 
       const result = await service.findAll(GameStatus.UPCOMING);
 
-      expect(result).toEqual(mockGames);
+      expect(result.data).toEqual(mockGames);
+      expect(result.meta).toEqual({
+        total: 1,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+      });
+      expect(mockPrismaService.game.count).toHaveBeenCalledWith({
+        where: { status: GameStatus.UPCOMING },
+      });
       expect(mockPrismaService.game.findMany).toHaveBeenCalledWith({
         where: { status: GameStatus.UPCOMING },
         include: { odds: true },
         orderBy: { startTime: 'asc' },
+        skip: 0,
+        take: 20,
+      });
+    });
+
+    it('should handle custom pagination parameters', async () => {
+      const mockGames = [{ id: '1', status: GameStatus.UPCOMING }];
+
+      mockPrismaService.game.count.mockResolvedValue(50);
+      mockPrismaService.game.findMany.mockResolvedValue(mockGames);
+
+      const result = await service.findAll(undefined, { page: 2, limit: 10 });
+
+      expect(result.data).toEqual(mockGames);
+      expect(result.meta).toEqual({
+        total: 50,
+        page: 2,
+        limit: 10,
+        totalPages: 5,
+        hasNext: true,
+        hasPrevious: true,
+      });
+      expect(mockPrismaService.game.findMany).toHaveBeenCalledWith({
+        where: {},
+        include: { odds: true },
+        orderBy: { startTime: 'asc' },
+        skip: 10,
+        take: 10,
       });
     });
   });
