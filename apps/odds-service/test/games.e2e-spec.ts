@@ -27,12 +27,17 @@ describe('GamesController (e2e)', () => {
   });
 
   describe('/games (GET)', () => {
-    it('should return an array of games', () => {
+    it('should return a paginated response with games', () => {
       return request(app.getHttpServer())
         .get('/games')
         .expect(200)
         .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
+          expect(res.body).toHaveProperty('data');
+          expect(res.body).toHaveProperty('meta');
+          expect(Array.isArray(res.body.data)).toBe(true);
+          expect(res.body.meta).toHaveProperty('total');
+          expect(res.body.meta).toHaveProperty('page');
+          expect(res.body.meta).toHaveProperty('limit');
         });
     });
 
@@ -41,9 +46,10 @@ describe('GamesController (e2e)', () => {
         .get('/games?status=UPCOMING')
         .expect(200)
         .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
-          if (res.body.length > 0) {
-            expect(res.body[0]).toHaveProperty('status', 'UPCOMING');
+          expect(res.body).toHaveProperty('data');
+          expect(Array.isArray(res.body.data)).toBe(true);
+          if (res.body.data.length > 0) {
+            expect(res.body.data[0]).toHaveProperty('status', 'UPCOMING');
           }
         });
     });

@@ -13,12 +13,11 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { GamesService } from './games.service';
 import { GameResponseDto } from './dto/game-response.dto';
 import { GenerateResultDto } from './dto/generate-result.dto';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { GetGamesQueryDto } from './dto/get-games-query.dto';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 
 @ApiTags('games')
@@ -28,11 +27,6 @@ export class GamesController {
 
   @Get()
   @ApiOperation({ summary: 'Get all games with odds (paginated)' })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ['UPCOMING', 'LIVE', 'FINISHED', 'CANCELLED'],
-  })
   @ApiResponse({
     status: 200,
     description: 'Paginated list of games',
@@ -61,10 +55,9 @@ export class GamesController {
     },
   })
   async findAll(
-    @Query('status') status?: string,
-    @Query() paginationQuery?: PaginationQueryDto,
+    @Query() query: GetGamesQueryDto,
   ): Promise<PaginatedResponseDto<GameResponseDto>> {
-    return this.gamesService.findAll(status, paginationQuery);
+    return this.gamesService.findAll(query.status, query);
   }
 
   @Get(':id')

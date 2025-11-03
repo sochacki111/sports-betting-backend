@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Cron } from '@nestjs/schedule';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { GameStatus } from '@prisma/odds-client';
@@ -50,6 +51,12 @@ export class GamesService {
     );
     this.regions = this.configService.get<string>('oddsApi.regions', 'us,uk');
     this.markets = this.configService.get<string>('oddsApi.markets', 'h2h');
+  }
+
+  @Cron('0 */10 * * * *')
+  async refreshOddsCron() {
+    this.logger.log('Cron job triggered: refreshing odds');
+    await this.refreshOdds();
   }
 
   async refreshOdds(): Promise<{ message: string; gamesUpdated: number }> {
