@@ -305,13 +305,12 @@ export class GamesService {
       throw new BadRequestException('Game is already finished');
     }
 
-    // TODO Commented out for demo purposes - normally would check if game started
-    // if (game.status === GameStatus.UPCOMING) {
-    //   const now = new Date();
-    //   if (now < game.startTime) {
-    //     throw new BadRequestException('Game has not started yet');
-    //   }
-    // }
+    if (game.status === GameStatus.UPCOMING) {
+      const now = new Date();
+      if (now < game.startTime) {
+        throw new BadRequestException('Game has not started yet');
+      }
+    }
 
     // Generate random scores if not provided
     const homeScore =

@@ -2,6 +2,13 @@
 
 A microservices-based sports betting platform built with NestJS, featuring odds integration, bet placement, and automated settlement.
 
+## Key Highlights
+
+- 🏗️ **Microservices Architecture** - Two independent services communicating via gRPC
+- 🐰 **Event-Driven with RabbitMQ** - Asynchronous bet settlement via message queues
+- 📊 **Real-time Odds Integration** - Live data from The Odds API
+- ⚡ **Strategy Pattern** - Extensible bet type system (Moneyline, ready for Spread/Totals)
+
 ## Architecture
 
 This project consists of two microservices:
@@ -11,12 +18,14 @@ This project consists of two microservices:
 - Provides REST API for game and odds management
 - Exposes gRPC server for inter-service communication
 - Generates game results for bet settlement
+- Publishes game finish events to RabbitMQ for async bet settlement
 
 ### 2. **Betting Service** (Port 3002)
 - Handles bet placement with comprehensive validation
 - Manages user accounts and balances
 - Communicates with Odds Service via gRPC
-- Settles bets based on game results
+- Listens to RabbitMQ for game finish events
+- Automatically settles bets when games finish (or via manual endpoint for testing)
 
 ## Features
 
@@ -24,15 +33,18 @@ This project consists of two microservices:
 - ✅ Fetch odds from The Odds API (multiple sports)
 - ✅ Store games and odds in PostgreSQL
 - ✅ REST endpoints for game listing and odds
+- ✅ Automated cron job to finish games and publish events
 - ✅ Manual game result generation (random or specified scores)
 - ✅ gRPC server for Betting Service integration
+- ✅ RabbitMQ event publishing for game completions
 - ✅ Swagger documentation at `/api/docs`
 
 ### Betting Service
 - ✅ Place bets with validation (balance, limits, duplicates)
 - ✅ Mock user system (john_doe, jane_smith, bob_jones)
 - ✅ Real-time odds validation via gRPC
-- ✅ Bet settlement with automatic balance updates
+- ✅ Event-driven bet settlement via RabbitMQ listeners
+- ✅ Manual bet settlement endpoint (for testing)
 - ✅ Strategy pattern for bet types (Moneyline implemented)
 - ✅ User status endpoint (balance, stats, bets)
 - ✅ Comprehensive error handling
@@ -61,13 +73,9 @@ Edit `.env` and set:
 - `THE_ODDS_API_KEY` - Your API key from the-odds-api.com
 - Database URLs (default uses localhost with different ports)
 
-3. **Setup PostgreSQL databases**
+3. **Setup necessary docker containers (PostgreSQL databases, RabbitMQ)**
 ```bash
-# Odds DB
-docker run --name odds-postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
-
-# Betting DB
-docker run --name betting-postgres -e POSTGRES_PASSWORD=postgres -p 5433:5432 -d postgres
+docker compose up -d odds-postgres betting-postgres rabbitmq
 ```
 
 4. **Run Prisma migrations**
@@ -133,11 +141,12 @@ Here's the complete end-to-end flow to test the application:
 6. **Generate Game Result** → `POST /games/{gameId}/result`
    - Simulate game finish (random or specific scores)
    - Game status changes to FINISHED
+   - Publishes event to RabbitMQ
 
-7. **Settle Bets** → `POST /bets/settle/{gameId}`
-   - Calculate bet outcomes (WON/LOST/PUSH)
-   - Update balances automatically
-   - Bet status: SETTLED
+7. **Automatic Bet Settlement** (via RabbitMQ)
+   - Betting Service listens to game finish events
+   - Automatically settles bets and updates balances
+   - Alternatively: Manual settlement via `POST /bets/settle/{gameId}` for testing
 
 8. **Check Final Balance** → `GET /users/{userId}/status`
    - If bet won: Balance = $900 + winnings
@@ -173,11 +182,7 @@ curl http://localhost:3001/games?status=UPCOMING
 
 ### 3. Get User ID
 
-```bash
-# Get user details by username
-curl http://localhost:3002/users/username/john_doe
-# Copy the 'id' field for placing bets
-```
+After creating mock users, the response will include user IDs. Alternatively, check the Swagger UI at `http://localhost:3002/api/docs` or use the "Create Mock Users" Postman request to see the user IDs in the response.
 
 ### 4. Place a Bet
 
@@ -244,13 +249,13 @@ Edit `.env` file:
 # Odds Service
 ODDS_SERVICE_PORT=3001
 ODDS_SERVICE_GRPC_PORT=5001
-ODDS_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/odds_db?schema=public"
+ODDS_DATABASE_URL="postgresql://postgres:postgres@localhost:5433/odds_db?schema=public"
 THE_ODDS_API_KEY=your_api_key_here
 
 # Betting Service
 BETTING_SERVICE_PORT=3002
 BETTING_GRPC_URL=localhost:5001
-BETTING_DATABASE_URL="postgresql://postgres:postgres@localhost:5433/betting_db?schema=public"
+BETTING_DATABASE_URL="postgresql://postgres:postgres@localhost:5434/betting_db?schema=public"
 
 # Betting Configuration
 DEFAULT_USER_BALANCE=1000

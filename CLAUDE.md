@@ -167,31 +167,6 @@ npm run start:odds:dev    # localhost:3001 (REST), localhost:5001 (gRPC)
 npm run start:betting:dev # localhost:3002 (REST)
 ```
 
-## Environment Variables (.env)
-
-```env
-# Odds Service Database
-ODDS_DATABASE_URL="postgresql://postgres:postgres@localhost:5434/odds_db?schema=public"
-
-# Betting Service Database
-BETTING_DATABASE_URL="postgresql://postgres:postgres@localhost:5435/betting_db?schema=public"
-
-# API Configuration
-THE_ODDS_API_KEY=0f0e9f0ae743d3d97e9c351dff1ede6c
-ODDS_API_BASE_URL=https://api.the-odds-api.com/v4
-
-# Service Ports
-ODDS_PORT=3001
-BETTING_PORT=3002
-ODDS_GRPC_PORT=5001
-BETTING_GRPC_URL=localhost:5001
-
-# Default Settings
-DEFAULT_USER_BALANCE=1000
-MIN_BET_AMOUNT=1
-MAX_BET_AMOUNT=10000
-```
-
 ## API Documentation
 
 **Swagger UI:**
@@ -240,10 +215,3 @@ export class SpreadStrategy implements BetStrategy {
 - **Prisma** with separate clients prevents conflicts between services
 - **Transactions** guarantee data consistency during bet placement
 - System ready for extension: live betting, more sports, real-time odds updates
-
-## Project Status
-
-✅ Implementation complete
-✅ End-to-end tests passed successfully
-✅ Full documentation
-✅ All requirements met (core + nice-to-haves)

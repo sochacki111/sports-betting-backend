@@ -54,13 +54,12 @@ export class GameFinishSimulatorService {
 
       this.logger.log(`Found ${gamesToFinish.length} games to auto-finish`);
 
-      // Update games to FINISHED status (without scores - Phase 2 will handle that)
       const gameIds = gamesToFinish.map((game) => game.id);
 
       const result = await this.prisma.game.updateMany({
         where: {
           id: { in: gameIds },
-          status: GameStatus.LIVE, // Additional safety check
+          status: GameStatus.LIVE,
         },
         data: {
           status: GameStatus.FINISHED,
@@ -72,7 +71,6 @@ export class GameFinishSimulatorService {
         `Successfully auto-finished ${result.count} games. IDs: ${gameIds.join(', ')}`,
       );
 
-      // Phase 2: Emit RabbitMQ events for each finished game
       for (const game of gamesToFinish) {
         const event = new GameFinishedEvent({
           gameId: game.id,
