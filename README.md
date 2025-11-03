@@ -255,28 +255,61 @@ The system prevents common betting errors:
 
 ## Testing
 
-### Run Unit Tests
+### Test Commands
+
 ```bash
+# Run all unit tests
 npm test
+
+# Run all tests (unit + E2E)
+npm run test:all
+
+# Run specific service tests
+npm run test:odds           # Odds service only (25 tests)
+npm run test:betting        # Betting service only (36 tests)
+
+# Run E2E tests
+npm run test:e2e            # Odds service E2E (3 tests)
+npm run test:e2e:odds       # Alias for above
+
+# Development
+npm run test:watch          # Watch mode (re-run on changes)
+npm run test:cov            # Coverage report
+npm run test:debug          # Debug mode
 ```
 
-### Run Specific Test Suite
-```bash
-# Betting Service tests
-npm test -- apps/betting-service/src/bets/bets.service.spec.ts
+### Test Coverage
 
-# Strategy tests
-npm test -- apps/betting-service/src/bets/strategies/moneyline.strategy.spec.ts
-```
+**Total: 64 tests (61 unit + 3 E2E)**
 
-### Run E2E Tests
-```bash
-npm run test:e2e
-```
+**Odds Service (25 unit tests):**
+- ✅ [GamesService](apps/odds-service/src/games/games.service.spec.ts) - 11 tests
+  - refreshOdds(), validateGame(), generateResult()
+  - findAll(), findOne(), findByIds()
+- ✅ [GameFinishSimulatorService](apps/odds-service/src/games/game-finish-simulator.service.spec.ts) - 7 tests
+  - Cron job, event emission, error handling
+- ✅ [GamesController E2E](apps/odds-service/test/games.e2e-spec.ts) - 3 tests
 
-### Run Tests with Coverage
+**Betting Service (36 unit tests):**
+- ✅ [BetsService](apps/betting-service/src/bets/bets.service.spec.ts) - 15 tests
+  - placeBet() - validation, balance checks, duplicates
+  - settleBets() - WON/LOST/PUSH, balance updates
+- ✅ [UsersService](apps/betting-service/src/users/users.service.spec.ts) - 16 tests
+  - createMockUsers(), findById(), getUserStatus(), updateBalance()
+- ✅ [MoneylineStrategy](apps/betting-service/src/bets/strategies/moneyline.strategy.spec.ts) - 5 tests
+  - calculatePotentialWin(), settleBet()
+
+### Running Specific Tests
+
 ```bash
-npm run test:cov
+# Run a specific test file
+npm test apps/betting-service/src/bets/bets.service.spec.ts
+
+# Run tests matching a pattern
+npm test -- -t "settleBets"
+
+# Run with verbose output
+npm test -- --verbose
 ```
 
 ## Database Management

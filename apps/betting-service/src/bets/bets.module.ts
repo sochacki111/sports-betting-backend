@@ -9,5 +9,6 @@ import { BetStrategyFactory } from './strategies/bet-strategy.factory';
   imports: [UsersModule],
   controllers: [BetsController],
   providers: [BetsService, MoneylineStrategy, BetStrategyFactory],
+  exports: [BetsService],
 })
 export class BetsModule {}

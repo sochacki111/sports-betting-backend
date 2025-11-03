@@ -36,18 +36,6 @@
 
 ## Critical Problems and Solutions
 
-### Problem 1: NestJS 11 Dependency Conflicts
-**Error:** `@nestjs/config@3.2.3` and `@nestjs/swagger@8.0.7` incompatible
-**Fix:** Upgrade to `@nestjs/config@4.0.2` and `@nestjs/swagger@11.0.2`
-
-### Problem 2: PostgreSQL Port Conflict
-**Error:** Port 5432 busy with local PostgreSQL
-**Solution:** Docker on ports 5434 (odds) and 5435 (betting)
-```bash
-docker run --name odds-postgres -e POSTGRES_DB=odds_db -p 5434:5432 -d postgres
-docker run --name betting-postgres -e POSTGRES_DB=betting_db -p 5435:5432 -d postgres
-```
-
 ### Problem 3: Proto File Path Resolution
 **Error:** `InvalidProtoDefinitionException: file at "/dist/proto/odds.proto" not found`
 **Cause:** `join(__dirname, '../../../proto/odds.proto')` doesn't work after compilation
